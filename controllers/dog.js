@@ -1,4 +1,4 @@
-const { Dog } = require('../models/Dog');
+const { Dog, Alert } = require('../models/Dog');
 const { isValidObjectId, default: mongoose } = require('mongoose');
 
 const createDog = async (request, response) => {
@@ -116,6 +116,28 @@ const getDogs = async (request, response) => {
   return response.status(200).json({ message: dogs, isSuccessful: true });
 };
 
+const addWhiteboard = async (request, response) => {
+  const { data, priority } = request.body;
+  const { dogId, type } = request.params;
+
+  let dog = await Dog.findById(dogId);
+
+  if (!dog) {
+    return response
+      .status(400)
+      .json({ message: 'Dog not found', isSuccessful: false });
+  }
+
+  let newElement = await new Alert({ text: data, priority });
+
+  dog[type].push(newElement);
+  dog.save();
+
+  return response.status(201).json({ message: 'Created', isSuccessful: true });
+};
+
+const deleteWhiteboard = (request, response) => {};
+
 const editWhiteboard = (request, response) => {};
 
-module.exports = { createDog, editDog, getDogById, getDogs };
+module.exports = { createDog, editDog, getDogById, getDogs, addWhiteboard };
