@@ -1,3 +1,4 @@
+const { Activity } = require('../models/Activity');
 const { Dog, Alert } = require('../models/Dog');
 const { isValidObjectId, default: mongoose } = require('mongoose');
 
@@ -90,11 +91,9 @@ const getDogById = async (request, response) => {
     });
   }
 
-  const dog = await Dog.findById(dogId).populate('friends', [
-    'name',
-    'level1',
-    'level2',
-  ]);
+  const dog = await Dog.findById(dogId)
+    .populate('friends', ['name', 'level1', 'level2'])
+    .populate('location');
 
   if (!dog) {
     return response
@@ -106,14 +105,33 @@ const getDogById = async (request, response) => {
 };
 
 const getDogs = async (request, response) => {
-  const dogs = await Dog.find(
+  let dogs = await Dog.find(
     {
       isDeleted: { $ne: true },
     },
-    ['name', 'level1', 'level2', 'location']
+    ['name', 'level1', 'level2', 'location', 'isWalking']
+  ).populate('location');
+
+  let newdogs = await Promise.all(
+    dogs.map(async (dog) => {
+      if (dog.isWalking) {
+        // search up last incomplete walk
+        const walk = await Activity.findOne(
+          {
+            dog: dog._id,
+            end_time: { $exists: false },
+            activity: 'walk',
+          },
+          ['id']
+        );
+        return { latest_walk: walk['_id'], ...dog.toObject() };
+      } else {
+        return dog;
+      }
+    })
   );
 
-  return response.status(200).json({ message: dogs, isSuccessful: true });
+  return response.status(200).json({ message: newdogs, isSuccessful: true });
 };
 
 const addWhiteboard = async (request, response) => {
