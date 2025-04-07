@@ -8,6 +8,7 @@ const cors = require('cors');
 const dogRouter = require('./routes/dog');
 const activityRouter = require('./routes/activity');
 const settingsRouter = require('./routes/settings');
+const noteRouter = require('./routes/behaviorNote');
 
 mongoose.connect('mongodb://127.0.0.1:27017/dog-local');
 const corsOptions = {
@@ -20,12 +21,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log('Incoming request URL:', req.url);
+  console.log(
+    'Incoming request URL:',
+    req.method,
+    req.url,
+    req.method === 'POST' || req.method === 'PUT' ? req.body : null
+  );
   next();
 });
 app.use('/dog', dogRouter);
 app.use('/activity', activityRouter);
 app.use('/settings', settingsRouter);
+app.use('/note', noteRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
