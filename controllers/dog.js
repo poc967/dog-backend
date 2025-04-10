@@ -151,11 +151,54 @@ const addWhiteboard = async (request, response) => {
   dog[type].push(newElement);
   dog.save();
 
-  return response.status(201).json({ message: 'Created', isSuccessful: true });
+  return response.status(201).json({ message: dog[type], isSuccessful: true });
 };
 
-const deleteWhiteboard = (request, response) => {};
+const deleteWhiteboard = async (request, response) => {
+  const { dogId, type, id } = request.params;
+
+  if (!isValidObjectId(dogId)) {
+    return response.status(400).json({
+      message: `${dogId} is not a valid ObjectId`,
+      isSuccessful: false,
+    });
+  }
+
+  if (!id) {
+    return response.status(400).json({
+      message: `${id} is not a valid ObjectId`,
+      isSuccessful: false,
+    });
+  }
+
+  let dog = await Dog.findById(dogId);
+
+  if (!dog) {
+    return response
+      .status(400)
+      .json({ message: 'Dog not found', isSuccessful: false });
+  }
+
+  let idx = dog[type].findIndex((alert) => alert._id == id);
+
+  if (idx == -1) {
+    return response
+      .status(400)
+      .json({ message: 'Alert not found', isSuccessful: false });
+  }
+  dog[type][idx].isDeleted = true;
+  dog.save();
+
+  return response.status(200).json({ message: dog[type], isSuccessful: true });
+};
 
 const editWhiteboard = (request, response) => {};
 
-module.exports = { createDog, editDog, getDogById, getDogs, addWhiteboard };
+module.exports = {
+  createDog,
+  editDog,
+  getDogById,
+  getDogs,
+  addWhiteboard,
+  deleteWhiteboard,
+};
